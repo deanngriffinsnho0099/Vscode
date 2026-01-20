@@ -1,5 +1,6 @@
 import os
 import logging
+from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -14,10 +15,17 @@ import re
 from io import BytesIO
 import sqlite3
 
+# Загружаем переменные из .env файла
+load_dotenv("GEMINI_API_KEY.env")
 
 # ================== НАСТРОЙКИ ==================
-TELEGRAM_BOT_TOKEN = "8545287407:AAEyBuYTc8eaZIWJkhc2mfS8jcciauTuKbI"
-GEMINI_API_KEY = "AIzaSyAiIps2XKFoQfQ955DfMx3LSD27eXnkdPs"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8545287407:AAEyBuYTc8eaZIWJkhc2mfS8jcciauTuKbI")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+if not GEMINI_API_KEY:
+    raise ValueError("❌ GEMINI_API_KEY не найден! Проверьте файл GEMINI_API_KEY.env")
+
+print(f"✅ API ключ загружен: {GEMINI_API_KEY[:20]}...")
 # ==============================================
 
 logging.basicConfig(level=logging.INFO)
@@ -258,7 +266,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     full_prompt = f"{SYSTEM_PROMPT}\n\nВопрос пользователя:\n{user_prompt}"
 
     try:
+        logging.info(f"Отправка запроса в Gemini: {user_prompt[:50]}...")
         response = text_model.generate_content(full_prompt)
+        logging.info(f"Получен ответ от Gemini: {response.text[:100]}...")
 
         formatted = latex_to_unicode(response.text)
         formatted = escape_markdown_v2(formatted)
@@ -267,6 +277,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(formatted, parse_mode="MarkdownV2")
 
     except Exception as e:
+        logging.error(f"Ошибка при запросе к Gemini: {e}")
         await update.message.reply_text(f"Ошибка: {e}")
 
 # ---------- Фото ----------
@@ -297,7 +308,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         full_prompt = f"{SYSTEM_PROMPT}\n\nЗапрос пользователя:\n{user_prompt}"
 
+        logging.info(f"Отправка запроса с фото в Gemini: {user_prompt[:50]}...")
         response = vision_model.generate_content([full_prompt, image])
+        logging.info(f"Получен ответ от Gemini: {response.text[:100]}...")
 
         formatted = latex_to_unicode(response.text)
         formatted = escape_markdown_v2(formatted)
@@ -306,6 +319,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(formatted, parse_mode="MarkdownV2")
 
     except Exception as e:
+        logging.error(f"Ошибка при запросе к Gemini с фото: {e}")
         await update.message.reply_text(f"Ошибка обработки фото: {e}")
 
 
