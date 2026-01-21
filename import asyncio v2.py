@@ -16,7 +16,7 @@ from io import BytesIO
 import sqlite3
 
 # Загружаем переменные из .env файла
-load_dotenv("GEMINI_API_KEY.env")
+load_dotenv()
 
 # ================== НАСТРОЙКИ ==================
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8545287407:AAEyBuYTc8eaZIWJkhc2mfS8jcciauTuKbI")
